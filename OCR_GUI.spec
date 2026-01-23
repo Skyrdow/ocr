@@ -5,7 +5,7 @@ a = Analysis(
     ['gui.py'],
     pathex=[],
     binaries=[],
-    datas=[('processor.py', '.'), ('rasterize.py', '.'), ('review_tool.py', '.')],
+    datas=[('processor.py', '.'), ('rasterize.py', '.'), ('review_tool.py', '.'), ('imagotipo', 'imagotipo')],
     hiddenimports=['google.generativeai', 'dotenv', 'pdf2image', 'PIL', 'reportlab'],
     hookspath=[],
     hooksconfig={},

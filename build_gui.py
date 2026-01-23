@@ -12,6 +12,7 @@ PyInstaller.__main__.run(
         "--add-data=processor.py:.",
         "--add-data=rasterize.py:.",
         "--add-data=review_tool.py:.",
+        "--add-data=imagotipo;imagotipo", # Bundle the imagotipo folder
         "--hidden-import=google.generativeai",
         "--hidden-import=dotenv",
         "--hidden-import=pdf2image",

@@ -124,10 +124,10 @@ def transcribe_and_translate(pdf_path):
        - Formatting problems or layout issues
 
     Output the result in the following format:
-    --- TRANSCRIPTION ---
+    --- TRANSCRIPCIÓN ---
     [Original text here]
 
-    --- TRANSLATION ---
+    --- TRADUCCIÓN ---
     [Spanish translation here]
 
     --- QUALITY ASSESSMENT ---
@@ -141,12 +141,12 @@ def transcribe_and_translate(pdf_path):
 
     # Parse the response to extract transcription
     response_text = response.text
-    transcription_start = response_text.find("--- TRANSCRIPTION ---")
-    translation_start = response_text.find("--- TRANSLATION ---")
+    transcription_start = response_text.find("--- TRANSCRIPCIÓN ---")
+    translation_start = response_text.find("--- TRADUCCIÓN ---")
 
     if transcription_start != -1 and translation_start != -1:
         transcription = response_text[
-            transcription_start + len("--- TRANSCRIPTION ---") : translation_start
+            transcription_start + len("--- TRANSCRIPCIÓN ---") : translation_start
         ].strip()
     else:
         transcription = "Error: Could not extract transcription from response"
@@ -171,3 +171,99 @@ def transcribe_and_translate(pdf_path):
         enhanced_response += "✅ No obvious issues detected\n"
 
     return enhanced_response
+
+
+
+def save_to_file(text, output_path, output_format="docx"):
+    """
+    Saves the text to the specified path in the given format.
+    Adds a mandatory AI disclaimer to the header/top of the document.
+    """
+    # Updated Disclaimer Text
+    AI_DISCLAIMER_ES = (
+        "Traducción no oficial.\n"
+        "Realizado con servicios de traducción de google impulsado por IA.\n"
+        "Puede contener errores"
+    )
+    
+    # Enable multiple lines for PDF processing logic
+    disclaimer_lines = AI_DISCLAIMER_ES.split('\n')
+
+    # Ensure directory exists
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+
+    if output_format == "docx":
+        from docx import Document
+        from docx.shared import Pt, RGBColor
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+        doc = Document()
+        
+        # Add disclaimer to the header of the default section
+        section = doc.sections[0]
+        header = section.header
+        
+        # We want it to be right aligned, light gray
+        for line in disclaimer_lines:
+            paragraph = header.add_paragraph()
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            run = paragraph.add_run(line)
+            run.bold = False
+            run.font.color.rgb = RGBColor(105, 105, 105) # Dim Gray (Darker)
+            run.font.size = Pt(10) # Larger size
+
+        # Add content
+        doc.add_paragraph(text)
+        doc.save(output_path)
+
+    elif output_format == "pdf":
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib import colors
+        from reportlab.lib.utils import simpleSplit
+
+        c = canvas.Canvas(output_path, pagesize=letter)
+        width, height = letter
+        
+        # Helper to draw header
+        def draw_header(c):
+            c.setFont("Helvetica", 10) # Larger size
+            c.setFillColor(colors.dimgrey) # Darker gray
+            
+            # Position at top right
+            # We'll calculate width of text to align right properly, or just use drawRightString
+            y_pos = height - 20
+            for line in disclaimer_lines:
+                c.drawRightString(width - 40, y_pos, line)
+                y_pos -= 12 # Increased spacing for larger font
+            
+            c.setFillColor(colors.black) # Reset
+
+        lines = text.split('\n')
+        
+        # Draw header on first page
+        draw_header(c)
+        
+        y = height - 60
+        margin = 40
+        line_height = 12
+        
+        c.setFont("Helvetica", 10)
+        
+        for line in lines:
+            # Wrap line if too long
+            wrapped_lines = simpleSplit(line, "Helvetica", 10, width - 2 * margin)
+            for wrapped_line in wrapped_lines:
+                if y < margin:
+                    c.showPage()
+                    draw_header(c)
+                    c.setFont("Helvetica", 10)
+                    y = height - 60
+                
+                c.drawString(margin, y, wrapped_line)
+                y -= line_height
+                
+        c.save()
+
+    else:
+        raise ValueError("Unsupported format. Only 'docx' and 'pdf' are supported.")

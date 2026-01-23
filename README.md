@@ -92,6 +92,16 @@ python build_gui.py
 
 The executable will be in `dist/OCR_GUI`.
 
+## Testing
+
+To verify the export functionality (Word/PDF generation), you can run the included test script:
+
+```bash
+python test_export.py
+```
+
+This will generate sample files in the `test_outputs/` directory.
+
 ## Project Structure
 
 - `gui.py`: Graphical user interface
